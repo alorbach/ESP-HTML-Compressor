@@ -32,6 +32,25 @@ def write_to_file(file, data, dir=""):
     f_output.write("const char data_"+filename+"_"+file_extension+"[] PROGMEM = {"+data.upper()+"};\n")			# print binary data
     f_output.write("#define " + ("data_" + filename + "_len " + str(data.count('0x'))).upper() + "\n\n")
 
+def file2Hex(filename):
+    output_str = ""
+    x = 1
+    myfile = open(filename, "rb")
+    try:
+	binLen = os.path.getsize(filename)
+	byte = myfile.read(1)
+
+	while byte != "":
+            output_str += hex(ord(byte))
+            if (x != binLen):
+		output_str += ","
+            x += 1
+	    # Next Byte 
+	    byte = myfile.read(1)
+    finally:
+	myfile.close()
+    return output_str
+
 def aschii2Hex(text):
     output_str = ""
     x = 1
@@ -62,26 +81,39 @@ def minify_css(input_file):
     response = requests.post(url, data=data)
     return response.text
 
+def process_file(dirname, filename, fullfilename):
+    if filename.endswith(".js"):
+	print("Output JAVASRIPT: " + fullfilename)
+	minified = minify_js(fullfilename)          # minify javascript
+	hexified = aschii2Hex(minified)                         # convert to hex
+    elif filename.endswith(".html"):
+	print("Output HTML: " + fullfilename)
+	minified = minify_html(fullfilename)        # minify html
+	hexified = aschii2Hex(minified)                         # convert to hex
+    elif filename.endswith(".css"):
+	print("Output CSS: " + fullfilename)
+	minified = minify_css(fullfilename)         # minify css
+	hexified = aschii2Hex(minified)                         # convet to hex
+    elif filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".gif"):
+	print("Output IMAGE: " + fullfilename)
+	hexified = file2Hex(fullfilename) # convert file to hex
+    else: 
+	# ignore other files
+	print("Ignore File: " + fullfilename)
+	return
+
+    # Output to file
+    if len(dirname) > 0: 
+	write_to_file( dirname + "_" + filename , hexified, fullfilename) # write to file
+    else :
+	write_to_file( filename , hexified, fullfilename) # write to file
+
 
 for root, dirs, files in os.walk(input_dir, topdown=False):
-    for name in files:   # for files
-        if name.endswith(".js"):
-            print(os.path.join(root, name))
-            minified = minify_js(os.path.join(root, name))          # minify javascript
-            hexified = aschii2Hex(minified)                         # convert to hex
-            write_to_file(name, hexified, os.path.join(root, name)) # write to file
-
-        elif name.endswith(".html"):
-            print(os.path.join(root, name))
-            minified = minify_html(os.path.join(root, name))        # minify html
-            hexified = aschii2Hex(minified)                         # convert to hex
-            write_to_file(name, hexified, os.path.join(root, name)) # write to file
-
-        elif name.endswith(".css"):
-            print(os.path.join(root, name))
-            minified = minify_css(os.path.join(root, name))         # minify css
-            hexified = aschii2Hex(minified)                         # convet to hex
-            write_to_file(name, hexified, os.path.join(root, name)) # write to file
-
-
+    #Process Files
+    for filename in files:   # for files
+	fullfilename = os.path.join(root, filename)
+	dirname = fullfilename.rsplit('/', 1)[0].strip(input_dir + "/") #Get Dirname
+	process_file(dirname, filename, fullfilename)
+ 
 f_output.close()
