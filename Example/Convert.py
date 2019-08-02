@@ -1,12 +1,22 @@
 #!/usr/bin/python
 #	 pip install requests
 import requests
+import sys
 import os
 
 input_dir = "HTML"              # Sub folder of webfiles
 output_dir = "HTML_minified"
 
-f_output = open("output_dir", "w")
+try:
+	sys.argv[1]
+except NameError:
+	f_output = 'output_dir'
+else:
+	f_output = sys.argv[1]
+print("Using outputfile: " + f_output)
+
+f_output = open(f_output, "w")
+# f_output = open("output_dir", "w")
 URL_minify_js   = 'https://javascript-minifier.com/raw' # Website to minify javascript
 URL_minify_html = 'https://html-minifier.com/raw'        # Website to minify html
 URL_minify_css  = 'https://cssminifier.com/raw'         # Website to minify css
@@ -18,10 +28,9 @@ def write_to_file(file, data, dir=""):
     dir = dir.replace(input_dir,"")                         # Remove the first directory(input_dir)
     dir = dir.replace("\\","/")                             # Chang to /
     f_output.write("// " + dir + "\n")                      # Print comment
-    f_output.write("const char* data_" + filename + "_" + file_extension + "_path PROGMEM = \""+str(dir)+"\";\n")    # print path
-    f_output.write("const char data_"+filename+"_"+file_extension+"[] PROGMEM = {"+data.upper()+"};\n\n")            # print binary data
-
-    # f_output.write("#define data_" + filename + "_len " + str(data.count('0x')) +"\n")
+    f_output.write("const char* data_" + filename + "_" + file_extension + "_path PROGMEM = \""+str(dir)+"\";\n")	# print path
+    f_output.write("const char data_"+filename+"_"+file_extension+"[] PROGMEM = {"+data.upper()+"};\n")			# print binary data
+    f_output.write("#define " + ("data_" + filename + "_len " + str(data.count('0x'))).upper() + "\n\n")
 
 def aschii2Hex(text):
     output_str = ""
